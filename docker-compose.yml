@@ -38,7 +38,7 @@ services:
       KC_DB_USERNAME: ${KEYCLOAK_POSTGRES_USER:-keycloak}
       KC_DB_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD:-keycloak_password}
     volumes:
-      - ./scripts/keycloak/ds-2026.json:/opt/keycloak/data/import/ds-2026-realm-realm.json:ro
+      - ./keycloak/ds-2026.json:/opt/keycloak/data/import/ds-2026-realm-realm.json:ro
     depends_on:
       keycloak-postgres:
         condition: service_healthy
