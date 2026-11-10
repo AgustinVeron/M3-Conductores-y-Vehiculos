@@ -1,0 +1,115 @@
+services:
+  keycloak-postgres:
+    image: postgres:16.2
+    container_name: m1-keycloak-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${KEYCLOAK_POSTGRES_DB:-keycloak}
+      POSTGRES_USER: ${KEYCLOAK_POSTGRES_USER:-keycloak}
+      POSTGRES_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD:-keycloak_password}
+    volumes:
+      - keycloak_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_POSTGRES_USER:-keycloak} -d ${KEYCLOAK_POSTGRES_DB:-keycloak}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - m3_network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.6
+    container_name: m1-keycloak-local
+    command: start --import-realm
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      KC_HOSTNAME: ${KC_HOSTNAME:-localhost}
+      KC_HOSTNAME_PORT: ${KC_HOSTNAME_PORT:-8080}
+      KC_HOSTNAME_STRICT_BACKCHANNEL: ${KC_HOSTNAME_STRICT_BACKCHANNEL:-false}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HEALTH_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-ds2026}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/${KEYCLOAK_POSTGRES_DB:-keycloak}
+      KC_DB_USERNAME: ${KEYCLOAK_POSTGRES_USER:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_POSTGRES_PASSWORD:-keycloak_password}
+    volumes:
+      - ./scripts/keycloak/ds-2026.json:/opt/keycloak/data/import/ds-2026-realm-realm.json:ro
+    depends_on:
+      keycloak-postgres:
+        condition: service_healthy
+    networks:
+      - m3_network
+
+  m3-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: clonuber/m3-drivers-vehicles:0.2.0
+    container_name: m3-app
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      SERVER_PORT: 3003
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/m3_db
+      SPRING_DATASOURCE_USERNAME: m3_user
+      SPRING_DATASOURCE_PASSWORD: m3_password
+      OIDC_ISSUER: ${OIDC_ISSUER:-http://localhost:8080/realms/ds-2026-realm}
+      OIDC_JWKS_URI: ${OIDC_JWKS_URI:-http://keycloak:8080/realms/ds-2026-realm/protocol/openid-connect/certs}
+      OIDC_AUTH_URI: ${OIDC_AUTH_URI:-http://localhost:8080/realms/ds-2026-realm/protocol/openid-connect/auth}
+      OIDC_TOKEN_URI: ${OIDC_TOKEN_URI:-http://keycloak:8080/realms/ds-2026-realm/protocol/openid-connect/token}
+      OIDC_USERINFO_URI: ${OIDC_USERINFO_URI:-http://keycloak:8080/realms/ds-2026-realm/protocol/openid-connect/userinfo}
+      OIDC_LOGOUT_URI: ${OIDC_LOGOUT_URI:-http://localhost:8080/realms/ds-2026-realm/protocol/openid-connect/logout}
+      OIDC_POST_LOGOUT_REDIRECT_URI: ${OIDC_POST_LOGOUT_REDIRECT_URI:-http://localhost:3003/oauth2/authorization/keycloak}
+      OIDC_TECH_TOKEN_URI: ${OIDC_TECH_TOKEN_URI:-http://keycloak:8080/realms/ds-2026-realm/protocol/openid-connect/token}
+      OIDC_TECH_CLIENT_ID: ${OIDC_TECH_CLIENT_ID:-}
+      OIDC_TECH_CLIENT_SECRET: ${OIDC_TECH_CLIENT_SECRET:-}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      M4_WORKER_ENABLED: ${M4_WORKER_ENABLED:-true}
+      OIDC_AUDIENCE: ${OIDC_AUDIENCE:-account}
+      OIDC_WEB_CLIENT_ID: ${OIDC_WEB_CLIENT_ID:-m3-web-client}
+      OIDC_WEB_CLIENT_SECRET: ${OIDC_WEB_CLIENT_SECRET:-}
+      SPRING_PROFILES_ACTIVE: docker
+      M4_BASE_URL: ${M4_BASE_URL:-http://localhost:4004}
+      M6_BASE_URL: ${M6_BASE_URL:-http://localhost:6006}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - m3_network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: m3_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: m3_db
+      POSTGRES_USER: m3_user
+      POSTGRES_PASSWORD: m3_password
+    volumes:
+      - m3_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U m3_user -d m3_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - m3_network
+
+volumes:
+  keycloak_postgres_data:
+    name: keycloak_postgres_data
+  m3_postgres_data:
+    name: m3_postgres_data
+
+networks:
+  m3_network:
+    name: m3_network

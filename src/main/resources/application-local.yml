@@ -1,0 +1,44 @@
+server:
+  port: ${SERVER_PORT:3003}
+
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/m3_db}
+    username: ${SPRING_DATASOURCE_USERNAME:m3_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:m3_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  thymeleaf:
+    cache: false
+
+app:
+  security:
+    mock-subject: "user-sub-123"
+
+logging:
+  level:
+    m3: DEBUG
+    org.springframework.security: INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html

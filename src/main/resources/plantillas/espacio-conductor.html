@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title th:text="${title} + ' · M3'">M3</title><link rel="stylesheet" th:href="@{/estilos/espacio-conductor.css}"></head>
+<body>
+<th:block th:fragment="navigation">
+<header class="mobile-bar"><a th:href="${homePath}" class="mobile-brand">M3 · Conductores</a><button id="menu-toggle" type="button" aria-controls="workspace-navigation" aria-expanded="false" aria-label="Abrir menú">☰ <span>Menú</span></button></header>
+<button class="menu-backdrop" id="menu-backdrop" type="button" aria-label="Cerrar menú" hidden></button>
+<nav class="workspace-nav" id="workspace-navigation" aria-label="Navegación principal">
+<div class="sidebar-heading"><a class="brand" th:href="${homePath}"><span class="brand-mark">M3</span><span>Conductores<small>y vehículos</small></span></a><button class="menu-close" id="menu-close" type="button" aria-label="Cerrar menú">×</button></div>
+<p class="nav-section" th:if="${hasDriverRole}">MI ESPACIO</p>
+<div class="nav-links" th:if="${hasDriverRole}">
+<a href="/ui/profile"><span class="nav-symbol" aria-hidden="true">◉</span> Mi perfil</a>
+<a href="/ui/vehicles"><span class="nav-symbol" aria-hidden="true">▤</span> Vehículos</a>
+<a href="/ui/documents"><span class="nav-symbol" aria-hidden="true">▣</span> Documentación</a>
+<a href="/ui/qualification"><span class="nav-symbol" aria-hidden="true">◇</span> Habilitación</a>
+<a href="/ui/availability"><span class="nav-symbol" aria-hidden="true">◎</span> Disponibilidad</a>
+<a href="/ui/offers"><span class="nav-symbol" aria-hidden="true">↗</span> Pedidos</a>
+<a href="/ui/trip"><span class="nav-symbol" aria-hidden="true">⌁</span> Viaje actual</a>
+<a href="/ui/customer-ratings"><span class="nav-symbol" aria-hidden="true">☆</span> Valoraciones</a>
+<a th:if="${showCreateProfile}" href="/ui/register"><span class="nav-symbol" aria-hidden="true">+</span> Crear perfil</a>
+</div>
+<p class="nav-section" th:if="${hasOperatorRole}">GESTIÓN</p>
+<div class="nav-links" th:if="${hasOperatorRole}"><a href="/ui/operator/drivers"><span class="nav-symbol" aria-hidden="true">▦</span> Conductores</a></div>
+<div class="sidebar-bottom"><p>M3 · Conductores y vehículos</p><form method="post" th:action="@{/logout}" class="logout-form"><button class="nav-logout">Cerrar sesión <span aria-hidden="true">↗</span></button></form></div>
+</nav><script defer src="/guiones/espacio-conductor.js"></script>
+</th:block>
+<main class="workspace-main"><header><p class="eyebrow">CONDUCTORES Y VEHÍCULOS</p><h1 th:text="${title}"></h1></header>
+<p th:if="${success}" class="notice success" role="status" th:text="${success}"></p>
+<p th:if="${error}" class="notice error" role="alert" th:text="${error}"></p>
+<section th:if="${page == 'register'}" class="panel"><p>Creá el perfil asociado a tu sesión actual.</p>
+<form method="post" th:action="@{/ui/register}"><label>Nombre completo<input name="name" required maxlength="100" placeholder="Ej. Ana Gómez"></label><button>Crear perfil</button></form></section>
+<section th:if="${page == 'vehicles'}">
+<div class="panel"><h2>Vehículos registrados</h2><p th:if="${#lists.isEmpty(vehicles)}">Todavía no registraste vehículos.</p>
+<div class="cards"><article th:each="v : ${vehicles}" class="vehicle"><span class="status-pill" th:attr="data-status=${v.qualificationStatus}" th:text="${v.qualificationStatus}"></span>
+<h3 th:text="${v.make + ' ' + v.model}"></h3><p th:text="${v.plate + ' · ' + v.modelYear + ' · ' + v.vehicleType}"></p>
+<p th:if="${v.color != null}" th:text="${v.color + ' · ' + v.capacity + ' pasajeros'}"></p>
+<p th:unless="${#sets.isEmpty(v.serviceCategories)}" th:text="${v.serviceCategories}"></p>
+<a href="/ui/documents">Gestionar documentación</a></article></div></div>
+<div class="panel"><h2>Registrar vehículo</h2><p>Completá sus datos y elegí los servicios que ofrece.</p>
+<a class="button" href="/ui/vehicles/register">Registrar auto o moto</a></div></section>
+<section th:if="${page == 'documents'}"><div class="panel"><h2>Licencia de conducir</h2>
+<p>Registrá o renová tu licencia y consultá todas sus revisiones.</p>
+<a class="button" th:href="@{/ui/drivers/{id}/documents(id=${driver.id})}">Gestionar licencia</a></div>
+<div class="panel"><h2>Documentación del vehículo</h2><p th:if="${#lists.isEmpty(vehicles)}">Primero <a href="/ui/vehicles">registrá un vehículo</a>.</p>
+<form th:unless="${#lists.isEmpty(vehicles)}" method="post" th:action="@{/ui/documents/vehicle}" class="form-grid">
+<label>Vehículo<select name="vehicleId" required><option th:each="v : ${vehicles}" th:value="${v.id}" th:text="${v.plate + ' · ' + v.make}"></option></select></label>
+<label>Documento<select name="documentType"><option value="INSURANCE">Seguro</option><option value="VEHICLE_REGISTRATION">Cédula del vehículo</option></select></label>
+<label>Número<input name="documentNumber" maxlength="80" placeholder="Ej. PÓL-123456" required></label><label>Entidad emisora<input name="issuingEntity" maxlength="100" placeholder="Ej. La Segunda Seguros"></label>
+<label>Emisión<input name="issuedAt" type="date" required></label><label>Vencimiento<input name="validUntil" type="date" required></label>
+<button type="submit">Registrar documento</button></form></div>
+<div class="panel" th:replace="~{espacio-conductor :: documentHistory}"></div></section>
+<section th:if="${page == 'availability'}"><div class="panel"><h2>Estado de tu solicitud</h2>
+<p th:if="${intent == null}">Todavía no enviaste una solicitud de disponibilidad.</p>
+<div th:if="${intent != null}"><p>Sincronización: <strong th:text="${intent.status}"></strong></p>
+<p>Versión solicitada: <span th:text="${intent.desiredVersion}"></span> · Confirmada: <span th:text="${intent.appliedVersion}"></span></p><form th:if="${intent.status.name() == 'FAILED'}" method="post" th:action="@{/ui/availability/retry}"><button>Reintentar sincronización</button></form>
+<p th:text="${intent.connected ? 'Conexión solicitada' : 'Desconexión solicitada'}"></p>
+<p th:text="${intent.available ? 'Disponibilidad solicitada' : 'No disponible'}"></p></div>
+<p class="notice">La solicitud se guarda en M3. La disponibilidad efectiva requiere la confirmación de M4.</p></div>
+<div class="panel"><h2>Cambiar disponibilidad</h2><p>El conductor y el vehículo deben estar aprobados.</p>
+<p th:if="${#lists.isEmpty(vehicles)}">Primero <a href="/ui/vehicles">registrá un vehículo</a>.</p>
+<form th:unless="${#lists.isEmpty(vehicles)}" method="post" th:action="@{/ui/availability}">
+<input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
+<label>Vehículo<select name="vehicleId" required><option th:each="v : ${vehicles}" th:value="${v.id}" th:text="${v.plate + ' · ' + v.qualificationStatus}"></option></select></label>
+<label class="check"><input type="checkbox" name="connected" value="true" th:checked="${intent != null and intent.connected}"> Quiero conectarme</label>
+<label class="check"><input type="checkbox" name="available" value="true" th:checked="${intent != null and intent.available}"> Quiero recibir viajes</label>
+<button type="submit">Guardar solicitud</button></form></div></section>
+<section th:if="${page == 'offers'}">
+<div class="panel"><h2>Ofertas de viaje</h2>
+<p th:if="${#lists.isEmpty(offers)}">No tenés pedidos pendientes. Las nuevas ofertas de M5 aparecerán acá.</p>
+<div class="cards"><article th:each="offer : ${offers}" class="vehicle offer-card">
+<span class="status-pill" data-status="PENDING">Nuevo pedido</span>
+<dl class="detail-grid"><div><dt>Origen</dt><dd th:text="${offer.pickupAddress}"></dd></div>
+<div><dt>Destino</dt><dd th:text="${offer.destinationAddress}"></dd></div>
+<div><dt>Tipo de vehículo</dt><dd th:text="${offer.vehicleType}"></dd></div>
+<div><dt>Vence</dt><dd th:text="${offer.expiresAt}"></dd></div></dl>
+<div class="actions"><form method="post" th:action="@{/ui/offers/{id}/decision(id=${offer.offerId})}">
+<input type="hidden" name="decision" value="REJECTED"><button type="submit" class="secondary">Rechazar</button></form>
+<form method="post" th:action="@{/ui/offers/{id}/decision(id=${offer.offerId})}">
+<input type="hidden" name="decision" value="ACCEPTED"><button type="submit">Aceptar</button></form></div>
+</article></div></div></section>
+<section th:if="${page == 'trip'}">
+<div class="panel" th:if="${trip == null}"><h2>No tenés un viaje asignado</h2>
+<p>Cuando aceptes un pedido de M5, el estado del viaje aparecerá en esta pantalla.</p><a class="button" href="/ui/offers">Ver pedidos</a></div>
+<div class="panel" th:if="${trip != null}">
+<div class="heading-row"><div><span class="status-pill" th:attr="data-status=${trip.status}" th:text="${trip.status}"></span>
+<h2 th:if="${trip.status.name() == 'ASSIGNED'}">Viaje asignado · esperando pasajero</h2>
+<h2 th:if="${trip.status.name() == 'IN_PROGRESS'}">Viaje en curso</h2>
+<h2 th:if="${trip.status.name() == 'FINALIZADO'}">✓ Viaje finalizado</h2></div></div>
+<p><strong>Origen:</strong> <span th:text="${trip.offer.pickupAddress}"></span></p>
+<p><strong>Destino:</strong> <span th:text="${trip.offer.destinationAddress}"></span></p>
+<p><strong>Identificador:</strong> <span th:text="${trip.tripId}"></span></p>
+<form th:if="${trip.status.name() == 'ASSIGNED'}" method="post" th:action="@{/ui/trip/{id}/start(id=${trip.tripId})}">
+<button type="submit">Pasajero a bordo / Iniciar viaje</button></form>
+<div th:if="${trip.status.name() == 'IN_PROGRESS'}" id="trip-location" data-poll-ms="5000">
+<h3>Ubicación simulada</h3><p>Latitud: <strong id="location-latitude" th:text="${location == null ? 'Esperando primera posición…' : location.latitude}"></strong></p>
+<p>Longitud: <strong id="location-longitude" th:text="${location == null ? 'Esperando primera posición…' : location.longitude}"></strong></p>
+<p>Actualizada: <time id="location-updated" th:text="${location == null ? 'Esperando actualización' : location.recordedAt}"></time></p>
+<p id="location-sync" th:class="${location != null and location.m4Synced ? 'notice success' : 'notice'}" th:text="${location != null and location.m4Synced ? '✓ Ubicación sincronizada con M4' : 'Enviando ubicación a M4'}"></p>
+<p class="hint">Ubicación simulada para fines de demostración.</p>
+<form method="post" th:action="@{/ui/trip/{id}/complete(id=${trip.tripId})}"><button type="submit" class="secondary">Finalizar viaje</button></form>
+</div>
+<div th:if="${trip.status.name() == 'FINALIZADO'}"><h3>Última ubicación</h3>
+<p><span th:text="${trip.destination.latitude}"></span>, <span th:text="${trip.destination.longitude}"></span></p>
+<p>Puntuación recibida: <strong th:text="${trip.driverRating == null ? 'Pendiente' : trip.driverRating + '/5'}"></strong></p>
+<p th:if="${ratingSummary.count > 0}">Promedio recibido: <strong th:text="${#numbers.formatDecimal(ratingSummary.average, 1, 1) + '/5'}"></strong>
+· <span th:text="${ratingSummary.count}"></span> valoraciones</p>
+<a class="button" href="/ui/offers">Volver a pedidos</a></div>
+</div></section>
+<section th:if="${page == 'operator'}" class="panel"><h2>Perfiles registrados</h2>
+<p th:if="${#lists.isEmpty(drivers)}">No hay conductores registrados.</p><div class="table-wrap"><table><thead><tr><th>Conductor</th><th>Estado</th><th>Acción</th></tr></thead>
+<tbody><tr th:each="d : ${drivers}"><td th:text="${d.displayName}"></td><td th:text="${d.qualificationStatus}"></td>
+<td><a th:href="@{/ui/operator/drivers/{id}(id=${d.id})}">Ver y revisar documentos</a></td></tr></tbody></table></div></section>
+<section th:if="${page == 'operator-detail'}">
+<div class="panel review-summary">
+<div class="heading-row"><div><a class="back-link" href="/ui/operator/drivers">← Volver a conductores</a><h2 th:text="${driver.displayName}">Conductor</h2><p class="hint">Revisión administrativa de perfil y documentación.</p></div>
+<span class="status-pill" th:attr="data-status=${driver.qualificationStatus}" th:text="${driverStatusLabel}">Pendiente</span></div></div>
+
+<div class="panel doc-panel">
+<div class="panel-heading"><h2>Documentación del conductor</h2><p class="hint">Licencia de conducir asociada al perfil.</p></div>
+<p th:if="${#lists.isEmpty(review.driverDocuments)}" class="notice">El conductor todavía no registró una licencia.</p>
+<th:block th:each="d : ${review.driverDocuments}"><article th:replace="~{espacio-conductor :: reviewCard(${d})}"></article></th:block>
+</div>
+
+<div class="panel doc-panel">
+<div class="panel-heading"><h2>Documentación de vehículos</h2><p class="hint">Cada vehículo agrupa su seguro y su documentación.</p></div>
+<p th:if="${#lists.isEmpty(review.vehicleGroups)}" class="notice">El conductor todavía no registró vehículos.</p>
+<section th:each="group : ${review.vehicleGroups}" class="vehicle-group">
+<header class="vehicle-group-header"><div><h3 th:text="${group.title}">Honda Wave 110S</h3><p class="hint" th:text="${group.metaLine}">A123BCD · Moto · 2023</p></div>
+<span class="status-pill" th:attr="data-status=${group.qualificationStatus}" th:text="${group.qualificationStatusLabel}">Pendiente</span></header>
+<p th:if="${#lists.isEmpty(group.documents)}" class="hint">Este vehículo no tiene documentación vigente para revisar.</p>
+<th:block th:each="d : ${group.documents}"><article th:replace="~{espacio-conductor :: reviewCard(${d})}"></article></th:block>
+</section></div>
+
+<div th:replace="~{espacio-conductor :: operatorDocumentHistory}"></div>
+
+<div class="panel doc-decision"><h2>Decisión administrativa</h2><p class="hint">Esta decisión corresponde al conductor o al vehículo completo y es independiente de la revisión individual de cada documento.</p>
+<form method="post" th:action="@{/ui/operator/drivers/{id}/qualification(id=${driver.id})}" class="form-grid">
+<input type="hidden" name="version" th:value="${driver.version}"><input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
+<label>Objeto<select name="vehicleId"><option value="">Conductor</option><option th:each="v : ${vehicles}" th:value="${v.id}" th:text="${v.plate + ' · ' + v.qualificationStatus}"></option></select></label>
+<label>Decisión<select name="status"><option value="APPROVED">Aprobar</option><option value="OBSERVED">Observar</option><option value="REJECTED">Rechazar</option><option value="SUSPENDED">Suspender</option></select></label>
+<label>Motivo<input name="reason" required maxlength="500" placeholder="Ej. Documentación vigente y legible"></label><button>Guardar decisión</button></form>
+<h3>Historial de decisiones</h3><p th:if="${#lists.isEmpty(decisions)}">Sin decisiones administrativas.</p>
+<article th:each="q : ${decisions}"><p th:text="${q.vehicleId == null ? 'Conductor' : 'Vehículo ' + q.vehicleId}"></p><strong th:text="${q.previousStatus + ' → ' + q.newStatus}"></strong><p th:text="${q.reason}"></p><small th:text="${q.occurredAt + ' · ' + q.actorSubject}"></small></article></div>
+</section>
+<section th:if="${page == 'ratings'}"><div class="panel"><h2>Valorar un cliente</h2><p>Ingresá el identificador de un viaje completado. Se verificará su asignación con el módulo de viajes antes de registrar tu valoración.</p>
+<form method="post" th:action="@{/ui/customer-ratings}" class="form-grid"><input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}">
+<label>Viaje<input name="tripId" required maxlength="128" placeholder="Ej. VIAJE-2026-001"></label><label>Puntuación<select name="score"><option value="5">5 · Excelente</option><option value="4">4 · Muy bueno</option><option value="3">3 · Bueno</option><option value="2">2 · Regular</option><option value="1">1 · Malo</option></select></label>
+<label>Comentario<textarea name="comment" maxlength="500" placeholder="Ej. El viaje fue puntual y cordial"></textarea></label><button>Registrar valoración</button></form></div>
+<div class="panel"><h2>Mis valoraciones</h2><p th:if="${#lists.isEmpty(ratings)}">Todavía no registraste valoraciones.</p>
+<article th:each="r : ${ratings}"><h3 th:text="${r.score + '/5 · Viaje ' + r.tripId}"></h3><p th:text="${r.comment}"></p><small th:text="${r.createdAt}"></small></article></div></section>
+<section th:if="${page == 'error'}" class="panel"><a href="/ui/register">Crear mi perfil</a> · <a href="/ui">Volver al inicio</a></section>
+</main>
+<th:block th:if="${false}"><div th:fragment="documentHistory" class="panel"><h2>Historial de documentos</h2>
+<p th:if="${#lists.isEmpty(documents)}">No hay documentos registrados.</p><div class="table-wrap" th:unless="${#lists.isEmpty(documents)}">
+<table><thead><tr><th>Tipo</th><th>Revisión</th><th>Estado</th><th>Vencimiento (exclusivo)</th><th>Actual</th></tr></thead>
+<tbody><tr th:each="d : ${documents}"><td th:text="${d.documentType}"></td><td th:text="${d.revision}"></td><td th:text="${d.status}"></td>
+<td th:text="${d.validUntil}"></td><td th:text="${d.current ? 'Sí' : 'No'}"></td></tr></tbody></table></div></div>
+<article th:fragment="reviewCard(d)" class="doc-card">
+<div class="doc-card-head"><div><h3 th:text="${d.typeLabel}">Seguro</h3><p class="doc-context" th:if="${d.vehicleContext != null}" th:text="${d.vehicleContext}">Honda Wave 110S · A123BCD</p></div>
+<div class="doc-status"><span class="doc-status-label">Estado actual</span><span class="status-pill" th:attr="data-status=${d.status}" th:text="${d.statusLabel}">Observado</span></div></div>
+<dl class="doc-meta"><div><dt>Revisión</dt><dd th:text="${d.revision}">1</dd></div><div><dt>Vence</dt><dd th:text="${d.validUntil}">10/04/2027</dd></div><div><dt>Revisión actual</dt><dd th:text="${d.current ? 'Sí' : 'No'}">Sí</dd></div></dl>
+<p class="doc-reason" th:if="${d.rejectionReason != null}"><strong>Último motivo:</strong> <span th:text="${d.rejectionReason}"></span><small th:if="${d.reviewedAt != null}"><span th:text="${d.reviewedAt}"></span><span th:if="${d.reviewedBy != null}" th:text="${' · ' + d.reviewedBy}"></span></small></p>
+<form method="post" th:action="@{/ui/operator/drivers/{id}/documents/{doc}/review(id=${driver.id},doc=${d.id})}" class="doc-form" data-document-review-form>
+<input type="hidden" name="version" th:value="${driver.version}">
+<label>Decisión<select name="decision" data-document-review-decision><option value="APPROVED">Aprobar</option><option value="OBSERVED">Observar</option><option value="REJECTED">Rechazar</option></select></label>
+<label data-document-review-reason-container hidden><span data-document-review-reason-label>Motivo de la decisión *</span><input name="reason" maxlength="500" data-document-review-reason placeholder="Explicá el motivo de la revisión"><small class="hint" data-document-review-reason-hint>Obligatorio para observar o rechazar un documento.</small></label>
+<div class="doc-actions"><button type="submit">Guardar revisión</button></div></form>
+</article>
+<div th:fragment="operatorDocumentHistory" class="panel"><h2>Historial de documentos</h2>
+<p class="hint">Incluye revisiones anteriores. La revisión actual es la única que se puede volver a revisar.</p>
+<p th:if="${#lists.isEmpty(review.history)}">No hay documentos registrados.</p><div class="table-wrap" th:unless="${#lists.isEmpty(review.history)}">
+<table><thead><tr><th>Documento</th><th>Corresponde a</th><th>Revisión</th><th>Estado</th><th>Vencimiento</th><th>Actual</th></tr></thead>
+<tbody><tr th:each="h : ${review.history}"><td th:text="${h.typeLabel}"></td><td th:text="${h.ownerLabel}"></td><td th:text="${h.revision}"></td>
+<td><span class="status-pill" th:attr="data-status=${h.status}" th:text="${h.statusLabel}"></span></td>
+<td th:text="${h.validUntil}"></td><td th:text="${h.current ? 'Sí' : 'No'}"></td></tr></tbody></table></div></div>
+</th:block>
+<script th:if="${page == 'trip'}" defer src="/guiones/viaje-conductor.js"></script>
+</body></html>

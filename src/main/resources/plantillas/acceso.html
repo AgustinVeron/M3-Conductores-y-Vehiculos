@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ingresar · M3 Conductores</title>
+  <link rel="stylesheet" th:href="@{/estilos/espacio-conductor.css}">
+</head>
+<body class="access-body">
+  <main class="access-page">
+    <section class="access-hero" aria-labelledby="access-title">
+      <div class="access-brand"><span class="brand-mark">M3</span><span>Conductores<small>y vehículos</small></span></div>
+      <p class="eyebrow">PLATAFORMA DE CONDUCTORES</p>
+      <h1 id="access-title">Tu información, en un solo lugar.</h1>
+      <p class="access-description">Consultá tu perfil, documentación, vehículos, habilitación y disponibilidad con una sesión protegida por M1.</p>
+      <a class="access-primary" th:href="${development} ? @{/login/m1} : @{/oauth2/authorization/keycloak}">Ingresar con M1 <span aria-hidden="true">→</span></a>
+      <p class="access-help">Vas a iniciar sesión en M1 y volverás automáticamente a tu perfil de M3.</p>
+      <div class="access-local" th:if="${demoAccessAvailable}">
+        <strong>Demostración local</strong>
+        <p>Recorré todas las pantallas con datos de ejemplo, sin iniciar sesión en M1.</p>
+        <div class="access-local-actions">
+          <a href="/demo/access">Simular acceso al perfil <span aria-hidden="true">→</span></a>
+          <a href="/demo/operator">Abrir listado de operadores <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <p class="access-alert" th:if="${m1Unavailable}" role="status">M1 no está iniciado en este entorno local. Usá los datos de ejemplo o levantá Keycloak para probar el inicio de sesión real.</p>
+      <div class="access-local" th:if="${development}">
+        <strong>Entorno local</strong>
+        <p>Para recorrer los datos de ejemplo sin M1 ejecutándose.</p>
+        <a href="/ui/profile">Abrir datos de ejemplo</a>
+      </div>
+    </section>
+    <aside class="access-info" aria-label="Qué protege M1">
+      <p class="eyebrow">ACCESO SEGURO</p>
+      <h2>M1 identifica tu cuenta.</h2>
+      <ol>
+        <li>Ingresás con tu usuario en M1.</li>
+        <li>M1 confirma tu identidad y tus permisos.</li>
+        <li>M3 muestra sólo la información asociada a tu cuenta.</li>
+      </ol>
+      <p class="access-note">M3 no recibe ni almacena tu contraseña.</p>
+    </aside>
+  </main>
+</body>
+</html>

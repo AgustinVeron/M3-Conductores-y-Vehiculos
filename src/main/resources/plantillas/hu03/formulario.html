@@ -1,0 +1,24 @@
+<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Registrar vehículo · M3</title><link rel="stylesheet" th:href="@{/estilos/espacio-conductor.css}"></head><body><nav th:replace="~{espacio-conductor :: navigation}"></nav><main class="workspace-main"><header><p class="eyebrow">CONDUCTORES Y VEHÍCULOS</p><h1>Registrar vehículo</h1></header><section class="panel">
+  <form th:action="@{/ui/vehicles/register}" th:object="${form}" method="post">
+    <input type="hidden" name="type" th:value="${type}"><input type="hidden" th:field="*{version}">
+    <div class="error" th:if="${#fields.hasGlobalErrors()}" role="alert"><p th:each="error : ${#fields.globalErrors()}" th:text="${error}"></p></div>
+    <div class="form-grid">
+      <label>Marca<input th:field="*{brand}" maxlength="60" placeholder="Ej. Toyota" required><small class="error" th:errors="*{brand}"></small></label>
+      <label>Modelo<input th:field="*{model}" maxlength="60" placeholder="Ej. Corolla" required><small class="error" th:errors="*{model}"></small></label>
+      <label>Año<input th:field="*{year}" type="number" min="1886" max="2100" placeholder="Ej. 2022" required><small class="error" th:errors="*{year}"></small></label>
+      <label>Patente<input th:field="*{plate}" maxlength="20" placeholder="Ej. AB 123 CD" required><small class="error" th:errors="*{plate}"></small></label>
+      <label>Color<input th:field="*{color}" maxlength="30" placeholder="Ej. Gris plata" required><small class="error" th:errors="*{color}"></small></label>
+      <label>Capacidad (cantidad de pasajeros)<input th:field="*{capacity}" type="number" min="1" max="6" placeholder="Ej. 4" required><small class="error" th:errors="*{capacity}"></small></label>
+    </div>
+    <h2>Tipo de servicio que ofrece</h2>
+    <div class="services">
+      <label><input type="checkbox" th:field="*{services}" value="STANDARD"><span><strong>STANDARD</strong> — Viaje Estándar</span></label>
+      <label><input type="checkbox" th:field="*{services}" value="PREMIUM"><span><strong>PREMIUM</strong> — Viaje Premium / Confort</span></label>
+      <label><input type="checkbox" th:field="*{services}" value="DELIVERY"><span><strong>DELIVERY</strong> — Envíos / Cadetería</span></label>
+      <label><input type="checkbox" th:field="*{services}" value="PETS"><span><strong>PETS</strong> — Traslado de Mascotas</span></label>
+    </div>
+    <small class="error" th:errors="*{services}"></small>
+    <p class="hint">Completá todos los campos obligatorios y seleccioná al menos un servicio.</p>
+    <button class="primary" type="submit">Registrar vehículo</button>
+  </form>
+</section></main></body></html>

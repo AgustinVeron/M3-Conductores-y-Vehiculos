@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Actualizar datos personales · M3</title>
+  <link rel="stylesheet" th:href="@{/estilos/espacio-conductor.css}">
+</head>
+<body>
+<nav th:replace="~{espacio-conductor :: navigation}"></nav>
+<main class="workspace-main">
+  <header>
+    <p class="eyebrow">CONDUCTORES Y VEHÍCULOS</p>
+    <h1>Actualizar datos personales</h1>
+    <p class="hint">Estos datos se usan para identificar tu perfil y revisar tu documentación.</p>
+  </header>
+  <section class="panel">
+    <p th:if="${errorMessage}" class="notice error" role="alert" th:text="${errorMessage}"></p>
+    <form method="post" th:action="@{/ui/profile/edit}" th:object="${form}" class="form-grid" novalidate>
+      <input type="hidden" th:field="*{version}">
+      <label>Nombre
+        <input th:field="*{firstName}" autocomplete="given-name" maxlength="100" placeholder="Ej. Ana" required>
+        <small class="text-danger" th:errors="*{firstName}"></small>
+      </label>
+      <label>Apellido
+        <input th:field="*{lastName}" autocomplete="family-name" maxlength="100" placeholder="Ej. Gómez" required>
+        <small class="text-danger" th:errors="*{lastName}"></small>
+      </label>
+      <label>DNI
+        <input th:field="*{dni}" inputmode="numeric" autocomplete="off" minlength="7" maxlength="10" placeholder="Ej. 42123456" required>
+        <small class="text-danger" th:errors="*{dni}"></small>
+      </label>
+      <label>Fecha de nacimiento
+        <input th:field="*{birthDate}" type="date" autocomplete="bday" required>
+        <small class="text-danger" th:errors="*{birthDate}"></small>
+      </label>
+      <label>Correo electrónico
+        <input th:field="*{email}" type="email" autocomplete="email" maxlength="150" placeholder="Ej. ana.gomez@correo.com" required>
+        <small class="text-danger" th:errors="*{email}"></small>
+      </label>
+      <label>Teléfono
+        <input th:field="*{phone}" type="tel" autocomplete="tel" maxlength="50" placeholder="Ej. +54 379 455 0101" required>
+        <small class="text-danger" th:errors="*{phone}"></small>
+      </label>
+      <label class="form-wide">Dirección
+        <input th:field="*{address}" autocomplete="street-address" maxlength="255" placeholder="Ej. Av. Costanera 1234, Corrientes" required>
+        <small class="text-danger" th:errors="*{address}"></small>
+      </label>
+      <div class="actions form-wide">
+        <button type="submit">Guardar datos personales</button>
+        <a class="button secondary" href="/ui/profile">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</main>
+</body>
+</html>

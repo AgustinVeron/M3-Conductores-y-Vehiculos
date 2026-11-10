@@ -1,0 +1,46 @@
+<!doctype html><html lang="es" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Licencia de conducir · M3</title><link rel="stylesheet" th:href="@{/estilos/espacio-conductor.css}"></head><body><nav th:replace="~{espacio-conductor :: navigation}"></nav><main class="workspace-main"><header><p class="eyebrow">CONDUCTORES Y VEHÍCULOS</p><h1>Licencia de conducir</h1></header>  <p th:text="'Conductor: ' + ${driver.displayName}"></p>
+  <p class="text-muted">Registrá los datos de la licencia. Cada renovación queda en el historial y comienza pendiente de revisión.</p>
+  <div th:if="${success}" class="notice success" role="status" th:text="${success}"></div>
+  <form th:action="@{/ui/drivers/{id}/documents(id=${driver.id})}" th:object="${form}" method="post" class="panel">
+    <input type="hidden" th:field="*{expectedVersion}">
+    <div th:if="${#fields.hasGlobalErrors()}" class="notice error" role="alert">
+      <p class="mb-0" th:each="error : ${#fields.globalErrors()}" th:text="${error}"></p>
+    </div>
+    <div class="mb-3">
+      <label for="documentNumber" class="form-label">Número de licencia</label>
+      <input id="documentNumber" th:field="*{documentNumber}" class="form-control" maxlength="80" placeholder="Ej. B.1 12345678" required>
+      <div class="text-danger" th:errors="*{documentNumber}"></div>
+    </div>
+    <div class="form-grid">
+      <div class="col-md-6 mb-3">
+        <label for="issuedAt" class="form-label">Fecha de emisión</label>
+        <input id="issuedAt" th:field="*{issuedAt}" type="date" class="form-control" required>
+        <div class="text-danger" th:errors="*{issuedAt}"></div>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="validUntil" class="form-label">Fecha de vencimiento</label>
+        <input id="validUntil" th:field="*{validUntil}" type="date" class="form-control" required>
+        <div class="text-danger" th:errors="*{validUntil}"></div>
+      </div>
+    </div>
+    <fieldset class="mb-3">
+      <legend class="fs-6">Servicios habilitados por la licencia</legend>
+      <label class="check"><input type="checkbox" th:field="*{serviceTypes}" value="AUTO"> Auto</label>
+      <label class="check"><input type="checkbox" th:field="*{serviceTypes}" value="MOTO"> Moto</label>
+      <div class="text-danger" th:errors="*{serviceTypes}"></div>
+    </fieldset>
+    <button class="btn btn-primary" type="submit">Registrar licencia</button>
+  </form>
+  <h2 class="h5">Historial</h2>
+  <p th:if="${#lists.isEmpty(history)}">Todavía no hay licencias registradas.</p>
+  <div class="panel table-wrap" th:unless="${#lists.isEmpty(history)}">
+    <table class="table table-striped">
+      <thead><tr><th>Revisión</th><th>Emisión</th><th>Válida hasta (exclusivo)</th><th>Servicios</th><th>Estado</th><th>Actual</th></tr></thead>
+      <tbody><tr th:each="item : ${history}">
+        <td th:text="${item.revision}"></td><td th:text="${item.issuedAt}"></td>
+        <td th:text="${item.validUntil}"></td><td th:text="${item.services}"></td>
+        <td th:text="${item.status}"></td><td th:text="${item.current} ? 'Sí' : 'No'"></td>
+      </tr></tbody>
+    </table>
+  </div>
+</main></body></html>
